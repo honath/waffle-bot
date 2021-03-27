@@ -1,0 +1,13 @@
+{
+    "prefix": "!",
+    "commands": [
+        {
+            "name": "help",
+            "description": "Shows all commands and their uses. Can specify (ex: !help help). Invalid arguments will simply list all commands."
+        },
+        {
+            "name": "kick",
+            "description": "Kicks a user from the server"
+        }
+    ]
+}
