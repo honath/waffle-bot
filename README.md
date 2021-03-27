@@ -3,10 +3,15 @@
 ## Overview
 Lightweight discord bot for personal use.
 
+## Functionality
+- Currently only help command
+
 ## Planned Additions
 - Connect to Twitch to announce when stream is live
 - Connect to Twitter to announce when stream is live
 - Connect to YouTube to announce when a video is uploaded or stream is live
+- Implement moderation options
+- Role management
 - Fun stuff, maybe.
 
 ## File Structure
