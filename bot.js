@@ -1,8 +1,10 @@
+require("dotenv").config();
+
 const fs = require("fs");
 const Discord = require("discord.js");
 
 const { prefix } = require("./resources/bot-commands.json");
-const { bot_token } = require("./config.json");
+const bot_token = process.env.BOT_TOKEN;
 
 const client = new Discord.Client();
 client.commands = new Discord.Collection();
