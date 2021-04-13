@@ -3,8 +3,10 @@ require("dotenv").config();
 const fs = require("fs");
 const Discord = require("discord.js");
 
+const app = require("./api/app");
+
 const { prefix } = require("./resources/bot-commands.json");
-const bot_token = process.env.BOT_TOKEN;
+const { bot_token, PORT = 3000 } = process.env;
 
 const client = new Discord.Client();
 client.commands = new Discord.Collection();
@@ -26,6 +28,10 @@ commandFolders.forEach((folder) => {
 // Bot load
 client.on("ready", () => {
   console.log("Ready to work!");
+
+  const listener = app.listen(PORT, () =>
+    console.log(`Listening on Port ${PORT}!`)
+  );
 });
 
 // Message listener
