@@ -7,7 +7,7 @@ const app = express();
 const twitchSigningSecret = process.env.TWITCH_SIGNING_SECRET;
 
 // JSON config files
-const subscriptions = require("./subscriptions.json");
+const subscriptions = require("../resources/subscriptions.json");
 
 // API routers
 const twitchRouter = require("./twitch/twitch.router");

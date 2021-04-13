@@ -1,5 +1,13 @@
 # Changelog
 
+## 4/13/2021 B
+
+### Minor changes
+- Moved externalURLs.json and subscriptions.json to "resources" folder, as it was more appropriate, given their use.
+- Updated file paths accordingly in relevant files
+- Updated README's filepath accordingly
+- Removed server.js from filepath
+
 ## 4/13/2021
 
 ### Major changes

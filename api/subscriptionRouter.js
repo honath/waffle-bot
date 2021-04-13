@@ -1,5 +1,5 @@
-const externals = require("./externalURLs.json");
-const subscriptions = require("./subscriptions.json");
+const externals = require("../resources/externalURLs.json");
+const subscriptions = require("../resources/subscriptions.json");
 
 const subscribeToTwitchEvents = require("./twitch/subscribeToTwitchEvents");
 
@@ -12,7 +12,7 @@ const BASE_URL = DEVELOPMENT
 /**
  * Routes to relevant event subscription
  * base on given string from ./app.js and data
- * stored in ./subscriptions.json
+ * stored in ../resources/subscriptions.json
  * @param {string} type
  * valid 'type' inputs are as follows:
  * ["twitch", "youtube"]

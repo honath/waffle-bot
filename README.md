@@ -28,9 +28,10 @@ Lightweight discord bot for personal use.
         - ./commands/utility
             - help.js (Help command, lists all commands in bot-commands.json intelligently)
     - ./resources
+        - externalURLs.json (Holds API endpoint routes)
+        - subscriptions.json (Tells whether or not subscription to events for service is active)
         - bot-commands.json (Holds command prefix and name/description pairs for each valid command)
     - ./api
-        - ~~server.js (initialize server)~~ Removed. See changelog
         - app.js (API handler)
         - ./api/twitch
             - twitch.router.js (handles Twitch API routes)
