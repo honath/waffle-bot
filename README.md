@@ -7,9 +7,10 @@ Lightweight discord bot for personal use.
 - Kick removes a user from a server, if command sender has permissions
 - Ban permanently removes a user from a server, if command sender has permissions
 - Timeout prevents a user from typing in chat for 10 minutes. Currently no way to remove.
+- Connects to Twitch via webhook subscription for stream live events
 
 ## Planned Additions
-- Connect to Twitch to announce when stream is live
+- Implement stream live notification for Twitch
 - Connect to Twitter to announce when stream is live
 - Connect to YouTube to announce when a video is uploaded or stream is live
 - Role management
@@ -29,16 +30,22 @@ Lightweight discord bot for personal use.
     - ./resources
         - bot-commands.json (Holds command prefix and name/description pairs for each valid command)
     - ./api
-        - server.js (initialize server)
+        - ~~server.js (initialize server)~~ Removed. See changelog
         - app.js (API handler)
         - ./api/twitch
             - twitch.router.js (handles Twitch API routes)
             - twitch.controller.js (API endpoints for Twitch HTTP calls)
+            - subscribeToTwitchEvents.js (Establishes webhook subscription to Twitch)
+        - ./api/errors
+            - notFound.js (sends custom 404 not found to error handler)
+            - methodNotAllowed.js (sends custom 405 not allowed to error handler)
+            - errorHandler.js (all purpose error handler/wrapper. Takes in status code and message)
 
 ## Dependencies
 - discord.js
 - dotenv
 - express
+- axios
 
 ## DevDependencies
 - nodemon

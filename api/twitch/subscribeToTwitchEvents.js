@@ -48,6 +48,12 @@ function subscribeToTwitchEvents(BASE_URL, externals, subscriptions) {
                 console.log(
                   `Event sub success with status code: ${res.status}`
                 );
+
+                // After subscription expires, refresh subscription.
+                setTimeout(
+                  subscribeToTwitchEvents(BASE_URL, externals, subscriptions),
+                  864000 * 1000
+                );
               })
               // Res is formatted as "Error: Request failed with status code <code>"
               .catch((res) => console.log(`Event Sub ${res}`));
