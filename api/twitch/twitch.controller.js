@@ -1,8 +1,8 @@
 /**
  * Twitch callback function passed into
  * subscription POST call
- * @param {object} req 
- * @param {object} res 
+ * @param {object} req
+ * @param {object} res
  */
 function subscribe(req, res) {
   const hubChallenge = req.query["hub.challenge"];
@@ -10,6 +10,11 @@ function subscribe(req, res) {
   res.status(200).send(`${hubChallenge}`);
 }
 
+function subscriptionAlert(req, res) {}
+
+function verifySignature(req, res, next) {}
+
 module.exports = {
   subscribe,
+  subscriptionAlert: [verifySignature, subscriptionAlert],
 };
