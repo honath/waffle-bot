@@ -1,7 +1,4 @@
-const externals = require("../resources/externalURLs.json");
-const subscriptions = require("../resources/subscriptions.json");
-
-const subscribeToTwitchEvents = require("./twitch/subscribeToTwitchEvents");
+const { subscribeToTwitchEvents } = require("./twitch/twitchAPI");
 
 const DEVELOPMENT = true;
 
@@ -10,20 +7,31 @@ const BASE_URL = DEVELOPMENT
   : process.env.PROD_BASE_URL;
 
 /**
- * Routes to relevant event subscription
- * base on given string from ./app.js and data
- * stored in ../resources/subscriptions.json
- * @param {string} type
- * valid 'type' inputs are as follows:
- * ["twitch", "youtube"]
+ * Takes in a string "type" specifying the service
+ * to subscribe to.
+ * Name is the channel in the specified service
+ * that the subscription is for
+ * @param {String} type
+ * @param {String} name
  */
-function subscriptionRouter(type) {
+function subscriptionRouter(type, name = null) {
+  /* If the channel name is missing, exit function early with error */
+  if (name === null)
+    return console.error(
+      `ERR in 'subscriptionRouter': The channel name is missing!`
+    );
+
+  /**
+   * Check which service is being requested
+   * Only works for Twitch and YouTube, all other services will
+   * be rejected by this function with a log statement
+   */
   switch (type) {
     case "twitch":
-      subscribeToTwitchEvents(BASE_URL, externals, subscriptions);
+      subscribeToTwitchEvents(BASE_URL, name);
       break;
     case "youtube":
-      subscribeToYouTubeEvents();
+      subscribeToYouTubeEvents(); // Placeholder
       break;
     default:
       console.log(`'${type}' is not a valid service to subscribe to.`);
@@ -31,7 +39,7 @@ function subscriptionRouter(type) {
 }
 
 function subscribeToYouTubeEvents() {
-  return console.log("Subscribed to YouTube");
+  return console.log("Subscribed to YouTube (TEMP)");
 }
 
 module.exports = subscriptionRouter;

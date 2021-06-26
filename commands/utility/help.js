@@ -1,23 +1,52 @@
-const { commands } = require("../../resources/bot-commands.json");
+const { prefix } = require("../../resources/config.json");
 
 module.exports = {
   name: "help",
   cooldown: 5,
-  description: "Displays useful command information for the user",
+  description: "Shows all commands and their descriptions, or you can specify a command by name to see more details.",
+  usage: "!help || !help <command name>",
   execute(message, args) {
-    const cmdNames = commands.map((cmd) => cmd.name);
-    // Check for valid argument following !help, ignore extras
-    let helpReply =
-      args.length && cmdNames.includes(args[0])
-        ? commands.find((cmd) => cmd.name === args[0])
-        : commands.map((cmd) => `**${cmd.name}** - ${cmd.description}`);
+    /**
+     * Initialize empty command array
+     * Will hold all requested information, formatted,
+     * to be sent back to requester
+     */
+    const data = [];
 
-    // Check if helpReply is array or object, complete output string accordingly
-    if (Array.isArray(helpReply)) helpReply = helpReply.join("\n");
-    if (helpReply.name)
-      helpReply = `**${helpReply.name}** - ${helpReply.description}`;
+    /* Retrieve all valid commands */
+    const { commands } = message.client;
 
-    // Reply to user with relevant help command(s)
-    message.reply(`\n${helpReply}`);
+    /**
+     * Check if there are any command arguments in message
+     * If there are not, list all command names + their descriptions
+     */
+    if (!args.length) {
+      data.push("\nHere is a list of all of the available commands:");
+      data.push(`***Command Prefix***: ${prefix}`);
+      data.push(
+        commands.map((cmd) => `**${cmd.name}**: ${cmd.description}`).join("\n")
+      );
+
+      return message.reply(data);
+    }
+
+    /* Get specific command from arguments (EX: !help <command>) */
+    const name = args[0].toLowerCase();
+
+    /* Retrieve command from commands list */
+    const cmd = commands.get(name);
+
+    /* Exit early with failure message if command not valid */
+    if (!cmd) return message.reply(`Sorry, ${name} is not a valid command`);
+
+    /* Fill command info array (data) with requested information */
+    data.push(`\n**Name**: ${cmd.name}`);
+
+    /* Not all commands will have these values, so they are nested in an "if" check */
+    if (cmd.description) data.push(`**Description**: ${cmd.description}`);
+    if (cmd.usage) data.push(`**Usage**: ${cmd.usage}`);
+
+    /* Reply with requested command data */
+    return message.reply(data);
   },
 };

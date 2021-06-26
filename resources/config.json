@@ -1,8 +1,10 @@
 {
+    "prefix": "!",
     "twitch": {
         "token": "https://id.twitch.tv/oauth2/token",
         "subscribe": "https://api.twitch.tv/helix/webhooks/hub",
         "stream": "https://api.twitch.tv/helix/streams",
-        "userID": "https://api.twitch.tv/helix/"
+        "userID": "https://api.twitch.tv/helix/",
+        "activeSubs": "https://api.twitch.tv/helix/eventsub/subscriptions"
     }
 }
