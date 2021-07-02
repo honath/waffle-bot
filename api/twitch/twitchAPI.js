@@ -9,17 +9,25 @@ const logger = new Logger(LOG_LEVEL);
 /* Twitch URL for all EventSub API requests */
 const EVENTSUB_URL = "https://api.twitch.tv/helix/eventsub/subscriptions";
 
+/* Internal/Callback URL based on dev/production environment */
+const environment = process.env.NODE_ENV || "development";
+
+const BASE_URL =
+  environment === "development"
+    ? process.env.DEV_BASE_URL
+    : process.env.PROD_BASE_URL;
+
 /* Twitch identification and signing secret for this application */
 const { TWITCH_CLIENT_ID, TWITCH_SECRET } = process.env;
 
 /**
  * Takes in the URL of the internal API for HTTPS requests
  * and the Twitch channel username to set up the
- * webhook subscription service
- * @param {String} BASE_URL Internal Service API URL
+ * eventsub subscription service
  * @param {String} name Twitch channel to subscribe to
+ * @param {Object} guildID Contains guild ahd channel IDs for subscription
  */
-async function subscribeToTwitchEvents(BASE_URL, name) {
+async function subscribeToTwitchEvents(name, guildID) {
   logger.info({
     action: "Initiate EventSub subscription",
     location: `'subscribeToTwitchEvents' in ${__dirname}`,
@@ -84,12 +92,12 @@ async function subscribeToTwitchEvents(BASE_URL, name) {
             status: response.status,
           });
         })
+        .then(logSubscription(guildID, twitchUserID))
         .catch((error) => {
           logger.error({
-            action: "EventSub Subscription Success",
+            action: "EventSub Subscription Failure",
             location: `'subscribeToTwitchEvents' in ${__dirname}`,
-            status: error.status,
-            notes: [`Error: ${error}`],
+            notes: [`${error}`],
           });
         })
         .finally(revokeAccessToken(ACCESS_TOKEN));
@@ -231,24 +239,65 @@ function retrieveUserID(name, headers) {
 }
 
 /**
- * DEBUGGER FUNCTION
- * =================
- * Retrieves all active subscriptions
- * that this client has with Twitch's
- * WebHook API, and outputs to console
+ * Sends a request to log guild, channel, and broadcaster information
+ * to internal server, to be saved to the database
+ * @param {Object} guildID Guild/Server initiating request
+ * @param {String} twitchUserID Broadcaster ID being subscribed to
+ * @returns {Promise}
  */
-async function debugSubs(token = null) {
+function logSubscription(guild_id, twitchUserID) {
   logger.trace({
-    action: "Check for active subscriptions",
-    location: `'debugSubs' in ${__dirname}`,
+    action: "Log EventSub Subscription",
+    location: `'logSubscription' in ${__dirname}`,
+    notes: [`For Broadcaster: ${twitchUserID}`, `In Guild: ${guild_id}`],
   });
 
-  /**
-   * Retrieve access token from API *if*
-   * this function is not being called by
-   * another function (token is not null)
-   */
-  const ACCESS_TOKEN = token === null ? await retrieveAccessToken() : token;
+  /* Internal token for validation */
+  const { INTERNAL_ACCESS_TOKEN } = process.env;
+
+  /* Set request header with auth token */
+  const headers = {
+    Authorization: `Bearer ${INTERNAL_ACCESS_TOKEN}`,
+  };
+
+  /* Set POST url, contains guild and broadcaster IDs */
+  const POST_URL = `${BASE_URL}twitch/subscriptions/${guild_id}?broadcaster_id=${twitchUserID}`;
+
+  /* Add a new subscription log entry to "subscriptions" table */
+  return axios
+    .post(POST_URL, null, { headers })
+    .then((response) => {
+      logger.info({
+        action: "Subscription Logging Success",
+        location: `'logSubscription' in ${__dirname}`,
+        status: response.status,
+        notes: [`For Broadcaster: ${twitchUserID}`, `In Guild: ${guild_id}`],
+      });
+    })
+    .catch((error) => {
+      logger.error({
+        action: "Subscription Logging Failure",
+        location: `'logSubscription' in ${__dirname}`,
+        status: error.status,
+        notes: [`Error: ${error.message}`],
+      });
+    });
+}
+
+/**
+ * Gets broadcaster ID for external use
+ * (External = outside of this file)
+ * @param {String} username
+ * @returns {String} broadcaster_id
+ */
+async function fetchBroadcasterID(username) {
+  logger.trace({
+    action: "Get user ID for external request",
+    location: `'fetchBroadcasterID' in ${__dirname}`,
+  });
+
+  /* Retrieve Access Token  */
+  const ACCESS_TOKEN = await retrieveAccessToken();
 
   /* Set axios request headers */
   const headers = {
@@ -256,10 +305,84 @@ async function debugSubs(token = null) {
     Authorization: `Bearer ${await ACCESS_TOKEN}`,
   };
 
-  /* Storage for all subscription IDs */
-  const subIDs = [];
+  /* Get broadcaster ID */
+  const broadcaster_id = await retrieveUserID(username, headers);
 
-  // Retrieve all active subscriptions with Twitch EventSub
+  /* Return to requester */
+  return broadcaster_id;
+}
+
+/**
+ * Gets broadcaster name for external use
+ * (External = outside of this file)
+ * @param {String} broadcaster_id 
+ * @returns {String} broadcaster login name
+ */
+async function fetchBroadcasterName(broadcaster_id) {
+  logger.trace({
+    action: "Get username for external request",
+    location: `'fetchBroadcasterName' in ${__dirname}`,
+  });
+
+  /* Retrieve Access Token  */
+  const ACCESS_TOKEN = await retrieveAccessToken();
+
+  /* Set axios request headers */
+  const headers = {
+    "Client-ID": TWITCH_CLIENT_ID,
+    Authorization: `Bearer ${await ACCESS_TOKEN}`,
+  };
+
+  /* Twitch GET URL as defined by documentation */
+  const GET_URL = `https://api.twitch.tv/helix/channels?broadcaster_id=${broadcaster_id}`;
+
+  /* Send request to Twitch */
+  return axios
+    .get(GET_URL, { headers })
+    .then((response) => {
+      logger.info({
+        action: "Get Username by Broadcaster ID Success",
+        location: `'fetchBroadcasterName' in ${__dirname}`,
+        status: response.status,
+        notes: [`Login Name: ${response.data.data[0].broadcaster_login}`]
+      });
+
+      /* Get name, account for Axios "data" nesting and Twitch response schema */
+      return response.data.data[0].broadcaster_login;
+    })
+    .catch((error) => {
+      logger.error({
+        action: "Get Username by Broadcaster ID Failure",
+        location: `'fetchBroadcasterName' in ${__dirname}`,
+        notes: [error]
+      });
+    })
+    .finally(revokeAccessToken(ACCESS_TOKEN));
+}
+
+/**
+ * DEBUGGER FUNCTION
+ * =================
+ * Retrieves all active subscriptions
+ * that this client has with Twitch's
+ * WebHook API, and outputs to console
+ */
+async function debugSubs() {
+  logger.trace({
+    action: "Check for active subscriptions",
+    location: `'debugSubs' in ${__dirname}`,
+  });
+
+  /* Retrieve access token from API */
+  const ACCESS_TOKEN = await retrieveAccessToken();
+
+  /* Set axios request headers */
+  const headers = {
+    "Client-ID": TWITCH_CLIENT_ID,
+    Authorization: `Bearer ${await ACCESS_TOKEN}`,
+  };
+
+  /* Retrieve all active subscriptions with Twitch EventSub */
   await axios
     .get(EVENTSUB_URL, { headers })
     .then((response) => response.data)
@@ -276,11 +399,6 @@ async function debugSubs(token = null) {
         status: response.status,
         notes: [subsList],
       });
-
-      /* Map sub IDs to subIDs variable from response */
-      response.data.forEach((sub) => {
-        subIDs.push(sub.id);
-      });
     })
     .catch((error) => {
       logger.error({
@@ -291,6 +409,54 @@ async function debugSubs(token = null) {
       });
     })
     .finally(revokeAccessToken(ACCESS_TOKEN));
+}
+
+/**
+ * DEBUGGER FUNCTION
+ * =================
+ * Helper function for cancelSubscriptions()
+ * @param {String} ACCESS_TOKEN
+ * @returns {Array} Active Subscription IDs
+ */
+async function getSubIDs(ACCESS_TOKEN) {
+  logger.trace({
+    action: "Get Active Sub IDs",
+    location: `'getSubIDs' in ${__dirname}`,
+  });
+
+  /* Set axios request headers */
+  const headers = {
+    "Client-ID": TWITCH_CLIENT_ID,
+    Authorization: `Bearer ${ACCESS_TOKEN}`,
+  };
+
+  /* Storage for all subscription IDs */
+  const subIDs = [];
+
+  // Retrieve all active subscriptions with Twitch EventSub
+  await axios
+    .get(EVENTSUB_URL, { headers })
+    .then((response) => response.data)
+    .then((response) => {
+      logger.info({
+        action: "Active Sub IDs Retrieval Success",
+        location: `'getSubIDs' in ${__dirname}`,
+        status: response.status,
+      });
+
+      /* Map sub IDs to subIDs variable from response */
+      response.data.forEach((sub) => {
+        subIDs.push(sub.id);
+      });
+    })
+    .catch((error) => {
+      logger.error({
+        action: "Active Sub IDs Retrieval Failure",
+        location: `'getSubIDs' in ${__dirname}`,
+        status: error.status,
+        notes: [`Error: ${error}`],
+      });
+    });
 
   /* Return all sub IDs for use in 'cancelSubscriptions' - does nothing otherwise */
   return subIDs;
@@ -318,21 +484,21 @@ async function cancelSubscriptions() {
   };
 
   /* Get all subscription IDs */
-  const subIDs = await debugSubs(await ACCESS_TOKEN);
+  const subIDs = await getSubIDs(await ACCESS_TOKEN);
 
   /* Send delete requests for each subscription ID */
   await subIDs.forEach(async (id) => {
     await axios
       .delete(`${EVENTSUB_URL}?id=${id}`, { headers })
       .then((response) => {
-        logger.debug({
+        logger.info({
           action: "Active Subs Cancellation Success",
           location: `'cancelSubscriptions' in ${__dirname}`,
           status: response.status,
         });
       })
       .catch((error) => {
-        logger.debug({
+        logger.error({
           action: "Active Subs Cancellation Failure",
           location: `'cancelSubscriptions' in ${__dirname}`,
           status: error.status,
@@ -350,4 +516,6 @@ module.exports = {
   subscribeToTwitchEvents,
   debugSubs,
   cancelSubscriptions,
+  fetchBroadcasterID,
+  fetchBroadcasterName
 };

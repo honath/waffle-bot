@@ -1,10 +1,11 @@
 const { subscribeToTwitchEvents } = require("./twitch/twitchAPI");
 
-const DEVELOPMENT = true;
+const Logger = require("../lib/logger");
 
-const BASE_URL = DEVELOPMENT
-  ? process.env.DEV_BASE_URL
-  : process.env.PROD_BASE_URL;
+/* Get defined log level and instantiate a new logger */
+const { LOG_LEVEL } = process.env;
+
+const logger = new Logger(LOG_LEVEL);
 
 /**
  * Takes in a string "type" specifying the service
@@ -14,11 +15,25 @@ const BASE_URL = DEVELOPMENT
  * @param {String} type
  * @param {String} name
  */
-function subscriptionRouter(type, name = null) {
+function subscriptionRouter(type, name = null, guildID = null) {
+  logger.info({
+    action: "Determine subscription service for Discord",
+    location: `'subscriptionRouter' in ${__dirname}`,
+    notes: [
+      `Service: ${type}`,
+      `Broadcaster: ${name}`,
+      `Guild ID: ${guildID}`,
+    ],
+  });
+
   /* If the channel name is missing, exit function early with error */
   if (name === null)
     return console.error(
       `ERR in 'subscriptionRouter': The channel name is missing!`
+    );
+  if (guildID === null)
+    return console.error(
+      `ERR in 'subscriptionRouter': Guild and Channel IDs are required!`
     );
 
   /**
@@ -28,7 +43,7 @@ function subscriptionRouter(type, name = null) {
    */
   switch (type) {
     case "twitch":
-      subscribeToTwitchEvents(BASE_URL, name);
+      subscribeToTwitchEvents(name, guildID);
       break;
     case "youtube":
       subscribeToYouTubeEvents(); // Placeholder

@@ -1,13 +1,21 @@
-const fs = require("fs");
+const Logger = require("../../lib/logger");
+
+const axios = require("axios");
+
+const { LOG_LEVEL, INTERNAL_ACCESS_TOKEN, NODE_ENV } = process.env;
+
+const BASE_URL =
+  NODE_ENV === "development"
+    ? process.env.DEV_BASE_URL
+    : process.env.PROD_BASE_URL;
+
+const logger = new Logger(LOG_LEVEL);
 
 module.exports = {
   name: "announce",
   description:
     "Sets the channel that this command is used in as the announcements channel",
   execute(message, args) {
-    /* Establish relative file path for announcement configuration file */
-    const CONFIG_PATH = "resources/announcementConfig.json";
-
     /**
      * Exit early if message not sent in a server OR
      * user does not have administrator privileges
@@ -17,36 +25,64 @@ module.exports = {
       return message.reply("You do not have permission to do that.");
 
     /* Retrieve the channel and guild IDs for where this command was sent from */
-    const channelID = message.channel.id ?? null;
-    const guildID = message.guild.id ?? null;
+    const channel_id = message.channel.id ?? null;
+    const guild_id = message.guild.id ?? null;
 
     /**
      * Verify that both the channel and guild
      * IDs were successfully retrieved
      * Exit early with an error message if not
      */
-    if (channelID === null)
+    if (channel_id === null)
       return message.reply("Sorry - I couldn't seem to find this channel.");
-    if (guildID === null)
+    if (guild_id === null)
       return message.reply(
         "Sorry - I couldn't seem to find this server. Are you sure you're messaging me in one?"
       );
 
-    /* Set data as object in preparation to write to JSON file */
-    const announcementData = {
-      channelID: channelID,
-      guildID: guildID,
+    /* URL for sending PUT request - sets announcement channel for this guild in DB */
+    const PUT_URL = `${BASE_URL}twitch/announcements/${guild_id}?channel_id=${channel_id}`;
+
+    /* Headers containing auth token */
+    const headers = {
+      Authorization: `Bearer ${INTERNAL_ACCESS_TOKEN}`,
     };
 
-    /* Stringify JSON data so that it is readable to humans */
-    const data = JSON.stringify(announcementData, null, 2);
+    /* Send PUT request to server */
+    return axios
+      .put(PUT_URL, null, { headers })
+      .then((response) => {
+        logger.info({
+          action: "Set Announcement Channel Success",
+          location: __dirname,
+          status: response.status,
+        });
 
-    /* Store information in announcementConfig.json */
-    fs.writeFileSync(CONFIG_PATH, data);
+        /* Reply to user with success message */
+        if (response.status === 202) {
+          /* No changes */
+          return message.reply(
+            "this channel is already the announcements channel. No changes."
+          );
+        } else {
+          /* New channel set */
+          return message.reply(
+            "this channel has now been saved as the announcements channel!"
+          );
+        }
+      })
+      .catch((error) => {
+        logger.error({
+          action: "Set Announcement Channel Failure",
+          location: __dirname,
+          status: error.status,
+          notes: [`Error: ${error.message}`],
+        });
 
-    /* End with confirmation message to verify success */
-    return message.reply(
-      "This channel has now been saved as the announcements channel!"
-    );
+        /* Reply to user with failure message */
+        return message.reply(
+          "I apologize, an error occurred and I am unable to set this channel as the announcements channel."
+        );
+      });
   },
 };

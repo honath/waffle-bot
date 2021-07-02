@@ -1,5 +1,32 @@
 # Changelog
 
+## 7/2/2021
+This update added a database connection and functionality. Announcement configuration is now stored in a database table, while all active Twitch notification subscriptions are now stored in a separate table. Subscriptions can be added, removed, or listed from Discord.
+
+### Major Changes
+- Removed `announcementConfig.json` file - now handled by DB
+- Added a PostgreSQL database hosted by [ElephantSQL](https://www.elephantsql.com/)
+- Added `knex` and `pg` npm packages as dependencies
+- Added the following knex and database folders and files:
+    - `knexfile.js`
+    - `db` folder
+        - `connection.js`
+        - `migrations` folder
+            - migration files for DB
+        - `seeds` folder
+            - seed files for DB
+    - `api/twitch` folder (not new)
+        - `twitch.service.js`
+- Added `asyncErrorBoundary.js` to wrap asynchronous function execution and error handling in the API
+- Added ability to list active Twitch notification subscriptions in Discord via command
+- Added ability to remove a Twitch notification subscription for a specified broadcaster in Discord via command
+
+### Minor Changes
+- Hid some testing files/Discord commands
+- Converted `notifyDiscord.js` function into a class with static methods for future purposes
+- Small message formatting change to the Logger class methods
+- README updates
+
 ## 6/23/2021
 
 **CURRENTLY ONLY OPERATES LOCALLY/MUST BE HOSTED LOCALLY**
