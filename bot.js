@@ -1,29 +1,39 @@
 require("dotenv").config();
 
+/* Internal API imports */
 const express = require("express");
 const bodyParser = require("body-parser");
 const notFound = require("./api/errors/notFound");
 const errorHandler = require("./api/errors/errorHandler");
+const verifyInternalToken = require("./api/common/verifyAuthToken");
 
+/* App instantiation */
 const app = express();
 
 // API routers
 const twitchRouter = require("./api/twitch/twitch.router");
 
+/* Class Imports */
 const fs = require("fs");
 const Discord = require("discord.js");
 const Logger = require("./lib/logger");
 
 /* Get defined log level and instantiate a new logger */
 const { LOG_LEVEL } = process.env;
-
 const logger = new Logger(LOG_LEVEL);
 
-/* const app = require("./api/app"); */
+/* Internal/Callback URL based on dev/production environment */
+const environment = process.env.NODE_ENV || "development";
 
+const BASE_URL =
+  environment === "development"
+    ? process.env.DEV_BASE_URL
+    : process.env.PROD_BASE_URL;
+
+/* Other general imports */
 const { prefix } = require("./resources/config.json");
 const { bot_token, PORT = 3000, INTERNAL_ACCESS_TOKEN } = process.env;
-const { channelID, guildID } = require("./resources/announcementConfig.json");
+const { default: axios } = require("axios");
 
 /* Initialize discord client */
 const client = new Discord.Client();
@@ -141,11 +151,11 @@ app.use(
   })
 );
 
+/* Baseline JSON parsing */
+app.use(express.json());
+
 /* Route handler for Twitch EventSub */
 app.use("/twitch", twitchRouter);
-
-/* Baseline JSON parsing for additional routes */
-app.use(express.json());
 
 /* Handle internal POST request to send a discord notification */
 app.post("/discord/twitch", verifyInternalToken, (request, response) => {
@@ -169,41 +179,6 @@ app.post("/discord/twitch", verifyInternalToken, (request, response) => {
 app.use(notFound);
 app.use(errorHandler);
 
-/* Validates the token received on requests to this API */
-function verifyInternalToken(request, response, next) {
-  logger.trace({
-    action: "Validate token for authorization",
-    location: `'verifyInternalToken' in ${__dirname}`,
-  });
-
-  /* Retrieve authorization header for verification */
-  const authHeader = request.header("Authorization");
-  const token = authHeader && authHeader.split(" ")[1];
-
-  /* Send an error if no token */
-  if (token == null)
-    next({
-      status: 401,
-      message: "No authorization token",
-    });
-
-  /* Verify token matches */
-  if (token !== INTERNAL_ACCESS_TOKEN) {
-    next({
-      status: 403,
-      message: "Invalid authorization token",
-    });
-  }
-
-  logger.info({
-    action: "Internal signature verification success",
-    location: `${request.method} to ${request.originalUrl}`,
-  });
-
-  /* Continue if no issues */
-  next();
-}
-
 /**
  * Takes in useful payload information
  * from Twitch live notification (EventSub)
@@ -211,13 +186,18 @@ function verifyInternalToken(request, response, next) {
  * for Discord
  * @param {Object} event
  */
-function twitchLive(event) {
+async function twitchLive(event) {
   try {
     /* Twitch's "lilac" color */
     const embedColor = "#B9A3E3";
 
     /* Get useful event information from payload data */
-    const { broadcaster_user_login, broadcaster_user_name, started_at } = event;
+    const {
+      broadcaster_user_id,
+      broadcaster_user_login,
+      broadcaster_user_name,
+      started_at,
+    } = event;
 
     /* Embed author name */
     const embedAuthor = "TheChosenWaffle's Discord Bot";
@@ -249,15 +229,50 @@ function twitchLive(event) {
         { name: "Stream Start Time:", value: streamTime }
       );
 
-    /* Send the embed message to the announcements channel by channel ID */
-    client.channels.cache.get(`${channelID}`).send(twitchEmbed);
+    /* Internal URL to GET all channel IDs for related broadcaster */
+    const GET_URL = `${BASE_URL}twitch/announcements?broadcaster_id=${broadcaster_user_id}`;
 
+    /* Set headers with auth token */
+    const headers = {
+      Authorization: `Bearer ${INTERNAL_ACCESS_TOKEN}`,
+    };
+
+    /* Retrieve all channel IDs */
+    const channelIDs = await axios
+      .get(GET_URL, { headers })
+      .then((response) => {
+        logger.info({
+          action: "Get All Channel IDs Success",
+          location: `'twitchLive' in ${__dirname}`,
+          status: response.status,
+          notes: [JSON.stringify(response.data, null, 2)],
+        });
+
+        /* Format response to account for Axios "data" nesting */
+        return response.data.data;
+      })
+      .catch((error) => {
+        logger.error({
+          action: "Get All Channel IDs Failure",
+          location: `'twitchLive' in ${__dirname}`,
+          status: error.status,
+          notes: [`Error: ${error.message}`],
+        });
+      });
+
+    /* Cycle through channel IDs and send notification */
+    await channelIDs.forEach(({ channel_id }) => {
+      /* Send the embed message to the announcements channel by channel ID */
+      client.channels.cache.get(`${channel_id}`).send(`@everyone ${twitchEmbed}`);
+    });
+
+    /* Success! */
     logger.info({
-      action: "Send a Discord notification for a Twitch notificaiton",
+      action: "Send a Discord notification for a Twitch notification",
       location: `'twitchLive' in ${__dirname}`,
       notes: [
-        `Payload data: ${event}`,
-        `Send message to channel '${channelID}' in guild '${guildID}'`,
+        `Payload data: ${JSON.stringify(event, null, 2)}`,
+        `All messages sent!`,
       ],
     });
   } catch (error) {
@@ -265,8 +280,7 @@ function twitchLive(event) {
       action: "Send a Discord notification for a Twitch notificaiton FAILURE",
       location: `'twitchLive' in ${__dirname}`,
       notes: [
-        `Payload data: ${event}`,
-        `Send message to channel '${channelID}' in guild '${guildID}'`,
+        `Payload data: ${JSON.stringify(event, null, 2)}`,
         `Error Message: ${error}`,
       ],
     });

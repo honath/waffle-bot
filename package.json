@@ -5,7 +5,13 @@
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js",
-    "dev": "nodemon bot.js"
+    "dev": "nodemon bot.js",
+    "knex": "knex",
+    "migrate": "knex migrate:latest",
+    "reset": "npm run rollback && npm run migrate && npm run seed",
+    "rollback": "knex migrate:rollback --all",
+    "seed": "knex seed:run",
+    "list": "knex migrate:list"
   },
   "keywords": [],
   "author": "",
@@ -14,7 +20,9 @@
     "axios": "^0.21.1",
     "discord.js": "^12.5.1",
     "dotenv": "^8.2.0",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "knex": "^0.95.6",
+    "pg": "^8.6.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.7"
