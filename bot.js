@@ -238,7 +238,7 @@ async function twitchLive(event) {
     logger.trace({
       action: "Log Discord Embed Object",
       location: `'twitchLive' in ${__dirname}`,
-      notes: [`${await twitchEmbed}`],
+      notes: [`${twitchEmbed}`],
     });
 
     /* Internal URL to GET all channel IDs for related broadcaster */
@@ -277,7 +277,7 @@ async function twitchLive(event) {
       /* Send the embed message to the announcements channel by channel ID */
       client.channels.cache
         .get(`${channel_id}`)
-        .send(`@everyone ${await twitchEmbed}`);
+        .send(`@everyone ${twitchEmbed}`);
     });
 
     /* Success! */
