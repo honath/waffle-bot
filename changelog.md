@@ -1,8 +1,12 @@
 # Changelog
 
+## 7/13/2021 C
+
+Minor rework to how channels are retrieved, to fix issue with cache returning undefined channels.
+
 ## 7/13/2021 B
 
-Added some trace-level logger calls for Heroku debugging
+Added some trace-level logger calls for Heroku debugging.
 
 ## 7/13/2021 A
 

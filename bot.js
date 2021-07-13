@@ -250,7 +250,7 @@ async function twitchLive(event) {
     };
 
     /* Retrieve all channel IDs */
-    const channelIDs = await axios
+    await axios
       .get(GET_URL, { headers })
       .then((response) => {
         logger.info({
@@ -263,6 +263,22 @@ async function twitchLive(event) {
         /* Format response to account for Axios "data" nesting */
         return response.data.data;
       })
+      .then((channel_IDs) => {
+        /* Cycle through channel IDs and send notification */
+        channel_IDs.forEach(({ channel_id }) => {
+          /* Send the embed message to the announcements channel by channel ID */
+          client.channels
+            .fetch(`${channel_id}`)
+            .then((channel) => channel.send(`@everyone ${twitchEmbed}`))
+            .catch((error) => {
+              logger.error({
+                action: "Fetch Channel ID",
+                location: `'twitchLive' in ${__dirname}`,
+                notes: [`Error: ${error}`],
+              });
+            });
+        });
+      })
       .catch((error) => {
         logger.error({
           action: "Get All Channel IDs Failure",
@@ -271,14 +287,6 @@ async function twitchLive(event) {
           notes: [`Error: ${error.message}`],
         });
       });
-
-    /* Cycle through channel IDs and send notification */
-    await channelIDs.forEach(({ channel_id }) => {
-      /* Send the embed message to the announcements channel by channel ID */
-      client.channels.cache
-        .get(`${channel_id}`)
-        .send(`@everyone ${twitchEmbed}`);
-    });
 
     /* Success! */
     logger.info({
@@ -290,7 +298,7 @@ async function twitchLive(event) {
       ],
     });
   } catch (error) {
-    logger.warn({
+    logger.error({
       action: "Send a Discord notification for a Twitch notificaiton FAILURE",
       location: `'twitchLive' in ${__dirname}`,
       notes: [
