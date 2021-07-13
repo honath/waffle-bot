@@ -1,6 +1,10 @@
 # Changelog
 
-## 7/13/2021
+## 7/13/2021 B
+
+Added some trace-level logger calls for Heroku debugging
+
+## 7/13/2021 A
 
 I capitalized a variable name that should've been in all caps already. Yes, that's really it.
 

@@ -171,6 +171,12 @@ app.post("/discord/twitch", verifyInternalToken, (request, response) => {
   /* Destructure "event" object from payload */
   const { event } = request.body;
 
+  logger.trace({
+    action: "Log Event Object",
+    location: "API route /discord/twitch",
+    notes: [event],
+  });
+
   /* Proceed to embed message function */
   twitchLive(event);
 });
@@ -229,6 +235,12 @@ async function twitchLive(event) {
         { name: "Stream Start Time:", value: streamTime }
       );
 
+    logger.trace({
+      action: "Log Discord Embed Object",
+      location: `'twitchLive' in ${__dirname}`,
+      notes: [`${await twitchEmbed}`],
+    });
+
     /* Internal URL to GET all channel IDs for related broadcaster */
     const GET_URL = `${BASE_URL}twitch/announcements?broadcaster_id=${broadcaster_user_id}`;
 
@@ -263,7 +275,9 @@ async function twitchLive(event) {
     /* Cycle through channel IDs and send notification */
     await channelIDs.forEach(({ channel_id }) => {
       /* Send the embed message to the announcements channel by channel ID */
-      client.channels.cache.get(`${channel_id}`).send(`@everyone ${twitchEmbed}`);
+      client.channels.cache
+        .get(`${channel_id}`)
+        .send(`@everyone ${await twitchEmbed}`);
     });
 
     /* Success! */
