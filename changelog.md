@@ -1,5 +1,9 @@
 # Changelog
 
+## 7/13/2021
+
+I capitalized a variable name that should've been in all caps already. Yes, that's really it.
+
 ## 7/2/2021
 This update added a database connection and functionality. Announcement configuration is now stored in a database table, while all active Twitch notification subscriptions are now stored in a separate table. Subscriptions can be added, removed, or listed from Discord.
 

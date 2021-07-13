@@ -32,7 +32,7 @@ const BASE_URL =
 
 /* Other general imports */
 const { prefix } = require("./resources/config.json");
-const { bot_token, PORT = 3000, INTERNAL_ACCESS_TOKEN } = process.env;
+const { BOT_TOKEN, PORT = 3000, INTERNAL_ACCESS_TOKEN } = process.env;
 const { default: axios } = require("axios");
 
 /* Initialize discord client */
@@ -131,7 +131,7 @@ client.on("message", (message) => {
 });
 
 /* Login bot using token */
-client.login(bot_token);
+client.login(BOT_TOKEN);
 
 /**
  * API INSTANTIATION - not how I would normally have formatted this
