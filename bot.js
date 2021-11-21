@@ -275,7 +275,7 @@ async function twitchLive(event) {
           /* Send the embed message to the announcements channel by channel ID */
           client.channels
             .fetch(`${channel_id}`)
-            .then((channel) => channel.send("@everyone\n" + {embeds: [twitchEmbed]}))
+            .then((channel) => channel.send("@everyone", twitchEmbed)
             .catch((error) => {
               logger.error({
                 action: "Fetch Channel ID",
