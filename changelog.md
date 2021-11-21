@@ -1,5 +1,18 @@
 # Changelog
 
+## 11/20/2021
+
+Fixed the issue preventing the Discord API from sending embedded messages to a channel, for the Twitch notification event.
+
+Change:
+```js
+send(`@everyone ${embed}`)
+```
+to
+```js
+send("@everyone", embed)
+```
+
 ## 7/13/2021 C
 
 Minor rework to how channels are retrieved, to fix issue with cache returning undefined channels.
