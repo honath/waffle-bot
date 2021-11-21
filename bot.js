@@ -266,10 +266,16 @@ async function twitchLive(event) {
       .then((channel_IDs) => {
         /* Cycle through channel IDs and send notification */
         channel_IDs.forEach(({ channel_id }) => {
+          /**
+           * TODO: handle what happens when a discord bot is no longer part
+           * of a server, DEL request for DB. Test with heroku, to see if this
+           * is even an issue yet
+           */
+
           /* Send the embed message to the announcements channel by channel ID */
           client.channels
             .fetch(`${channel_id}`)
-            .then((channel) => channel.send(`@everyone ${twitchEmbed}`))
+            .then((channel) => channel.send("@everyone\n" + ${twitchEmbed}))
             .catch((error) => {
               logger.error({
                 action: "Fetch Channel ID",
