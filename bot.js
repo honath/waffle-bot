@@ -251,7 +251,7 @@ async function twitchLive(event) {
 
     /* Retrieve all channel IDs */
     await axios
-      .get(GET_URL, { headers })
+      .get(await GET_URL, { headers })
       .then((response) => {
         logger.info({
           action: "Get All Channel IDs Success",
