@@ -271,10 +271,9 @@ async function twitchLive(event) {
            * of a server, DEL request for DB. Test with heroku, to see if this
            * is even an issue yet
            */
-          console.log(client.channels.fetch(channel_id))
 
           /* Send the embed message to the announcements channel by channel ID */
-          /* client.channels
+          client.channels
             .fetch(`${channel_id}`)
             .then((channel) => channel.send("@everyone\n" + twitchEmbed))
             .catch((error) => {
@@ -283,7 +282,7 @@ async function twitchLive(event) {
                 location: `'twitchLive' in ${__dirname}`,
                 notes: [`Error: ${error}`],
               });
-            }); */
+            });
         });
       })
       .catch((error) => {
