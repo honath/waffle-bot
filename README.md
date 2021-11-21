@@ -16,7 +16,7 @@
 
 Lightweight discord bot with moderation capability and more. Subscribes to [Twitch's EventSub](https://dev.twitch.tv/docs/eventsub) services to alert a Discord server when a subscription notification is received.
 
-Invite the bot to your server [here](https://discord.com/api/oauth2/authorize?client_id=824004407154835496&permissions=0&scope=bot)
+Invite the bot to your server [here](https://discord.com/api/oauth2/authorize?client_id=824004407154835496&permissions=8&scope=bot)
 
 ## General Usage
 
