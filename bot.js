@@ -285,6 +285,17 @@ async function twitchLive(event) {
             });
         });
       })
+      .then(() => {
+        /* Success! */
+        logger.info({
+          action: "Send a Discord notification for a Twitch notification",
+          location: `'twitchLive' in ${__dirname}`,
+          notes: [
+            `Payload data: ${JSON.stringify(event, null, 2)}`,
+            `All messages sent!`,
+          ],
+        });
+      })
       .catch((error) => {
         logger.error({
           action: "Get All Channel IDs Failure",
@@ -293,16 +304,6 @@ async function twitchLive(event) {
           notes: [`Error: ${error.message}`],
         });
       });
-
-    /* Success! */
-    logger.info({
-      action: "Send a Discord notification for a Twitch notification",
-      location: `'twitchLive' in ${__dirname}`,
-      notes: [
-        `Payload data: ${JSON.stringify(event, null, 2)}`,
-        `All messages sent!`,
-      ],
-    });
   } catch (error) {
     logger.error({
       action: "Send a Discord notification for a Twitch notificaiton FAILURE",
